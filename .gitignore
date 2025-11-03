@@ -6,6 +6,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
+*.pyc
+*.pyo
+*.pyd
 .Python
 build/
 develop-eggs/
@@ -33,13 +36,14 @@ ENV/
 env.bak/
 venv.bak/
 
-# IDEs
+# IDEs and Editors
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 .DS_Store
+*.code-workspace
 
 # Jupyter Notebook
 .ipynb_checkpoints

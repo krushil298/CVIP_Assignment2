@@ -1,0 +1,125 @@
+# CVIP Assignment-2: Traffic Monitoring System
+# Git Ignore File
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# YOLO Models (large files)
+models/*.pt
+models/*.onnx
+models/*.engine
+!models/.gitkeep
+
+# Output Directories
+output_images/**/*.jpg
+output_images/**/*.png
+output_images/**/*.jpeg
+!output_images/annotated/.gitkeep
+!output_images/analysis/.gitkeep
+
+# Reports
+reports/*.csv
+reports/*.json
+reports/*.txt
+!reports/.gitkeep
+
+# Logs
+*.log
+logs/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Environment variables
+.env
+.env.local
+
+# Large datasets (keep only samples)
+input_images/*.jpg
+input_images/*.png
+!input_images/sample_*.jpg
+!input_images/sample_*.png
+!input_images/.gitkeep
+
+# System files
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Compiled
+*.pyc
+*.pyo
+*.pyd
+
+# Package files
+*.tar.gz
+*.zip
+*.rar
+
+# MacOS
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+ehthumbs.db
+Desktop.ini
+
+# Training data (if any)
+data/train/
+data/val/
+data/test/
+weights/
+
+# Results (optional - uncomment if you don't want to track results)
+# results/
+# runs/

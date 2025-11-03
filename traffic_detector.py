@@ -36,15 +36,15 @@ class TrafficDetector:
         'stop sign': 11
     }
 
-    # Color mapping for different vehicle types (BGR format)
+    # Color mapping for different vehicle types (BGR format) - Bright, high-contrast colors
     COLORS = {
-        'car': (0, 255, 0),          # Green
-        'motorcycle': (255, 0, 0),    # Blue
-        'bus': (0, 165, 255),        # Orange
-        'truck': (0, 0, 255),        # Red
-        'bicycle': (255, 255, 0),    # Cyan
-        'traffic light': (0, 255, 255), # Yellow
-        'stop sign': (128, 0, 128)   # Purple
+        'car': (0, 255, 0),          # Bright Green
+        'motorcycle': (255, 100, 0),  # Bright Blue
+        'bus': (0, 140, 255),        # Bright Orange
+        'truck': (0, 0, 255),        # Bright Red
+        'bicycle': (255, 255, 0),    # Bright Cyan
+        'traffic light': (0, 255, 255), # Bright Yellow
+        'stop sign': (180, 0, 255)   # Bright Purple
     }
 
     def __init__(self, model_name='yolov8n.pt', confidence_threshold=0.25):
@@ -92,6 +92,16 @@ class TrafficDetector:
         original_image = image.copy()
         height, width = image.shape[:2]
 
+        # Upscale small images for better visibility
+        min_dimension = 800
+        if width < min_dimension or height < min_dimension:
+            scale = max(min_dimension / width, min_dimension / height)
+            new_width = int(width * scale)
+            new_height = int(height * scale)
+            image = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_CUBIC)
+            height, width = image.shape[:2]
+            print(f"[INFO] Upscaled image to {width}x{height} for better visibility")
+
         # Perform detection
         start_time = time.time()
         results = self.model.predict(
@@ -127,35 +137,67 @@ class TrafficDetector:
                     vehicle_detections.append(detection_info)
                     vehicle_counts[class_name] += 1
 
-                    # Draw bounding box
+                    # Calculate scaled bbox coordinates
+                    scale_x = width / original_image.shape[1]
+                    scale_y = height / original_image.shape[0]
+                    x1_scaled = int(x1 * scale_x)
+                    y1_scaled = int(y1 * scale_y)
+                    x2_scaled = int(x2 * scale_x)
+                    y2_scaled = int(y2 * scale_y)
+
+                    # Draw bounding box with thicker lines
                     color = self.COLORS.get(class_name, (255, 255, 255))
-                    cv2.rectangle(image, (x1, y1), (x2, y2), color, 2)
+                    thickness = max(3, int(width / 200))  # Adaptive thickness
+                    cv2.rectangle(image, (x1_scaled, y1_scaled), (x2_scaled, y2_scaled), color, thickness)
 
-                    # Create label
-                    label = f"{class_name}: {confidence:.2f}"
+                    # Create label with larger font
+                    label = f"{class_name.upper()}: {confidence:.2f}"
+                    font_scale = max(0.8, width / 800)  # Adaptive font size
+                    font_thickness = max(2, int(width / 400))
 
-                    # Draw label background
+                    # Draw label background with padding
                     (label_width, label_height), baseline = cv2.getTextSize(
-                        label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2
+                        label, cv2.FONT_HERSHEY_DUPLEX, font_scale, font_thickness
                     )
-                    y1_label = max(y1, label_height + 10)
+                    padding = 8
+                    y1_label = max(y1_scaled, label_height + padding * 2)
+
+                    # Draw shadow for label background
                     cv2.rectangle(
                         image,
-                        (x1, y1_label - label_height - 10),
-                        (x1 + label_width, y1_label),
+                        (x1_scaled + 2, y1_label - label_height - padding * 2 + 2),
+                        (x1_scaled + label_width + padding * 2 + 2, y1_label + 2),
+                        (0, 0, 0),
+                        -1
+                    )
+
+                    # Draw label background
+                    cv2.rectangle(
+                        image,
+                        (x1_scaled, y1_label - label_height - padding * 2),
+                        (x1_scaled + label_width + padding * 2, y1_label),
                         color,
                         -1
                     )
 
-                    # Draw label text
+                    # Draw label text with shadow for better readability
                     cv2.putText(
                         image,
                         label,
-                        (x1, y1_label - 5),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.6,
+                        (x1_scaled + padding + 1, y1_label - padding + 1),
+                        cv2.FONT_HERSHEY_DUPLEX,
+                        font_scale,
+                        (0, 0, 0),
+                        font_thickness + 1
+                    )
+                    cv2.putText(
+                        image,
+                        label,
+                        (x1_scaled + padding, y1_label - padding),
+                        cv2.FONT_HERSHEY_DUPLEX,
+                        font_scale,
                         (255, 255, 255),
-                        2
+                        font_thickness
                     )
 
         # Calculate statistics
@@ -237,41 +279,79 @@ class TrafficDetector:
         overlay = image.copy()
         height, width = image.shape[:2]
 
-        # Semi-transparent background for summary
-        cv2.rectangle(overlay, (10, 10), (400, 200), (0, 0, 0), -1)
-        cv2.addWeighted(overlay, 0.6, image, 0.4, 0, image)
+        # Calculate adaptive panel size and font
+        panel_width = max(450, int(width * 0.3))
+        font_scale = max(0.9, width / 800)
+        font_thickness = max(2, int(width / 400))
+        line_height = int(35 * font_scale)
 
-        # Add summary text
-        y_offset = 35
-        cv2.putText(image, f"Total Vehicles: {total_vehicles}",
-                   (20, y_offset), cv2.FONT_HERSHEY_SIMPLEX,
-                   0.7, (255, 255, 255), 2)
+        # Calculate panel height based on number of vehicle types
+        num_lines = 3 + sum(1 for count in vehicle_counts.values() if count > 0)
+        panel_height = num_lines * line_height + 30
 
-        y_offset += 30
+        # Draw shadow
+        cv2.rectangle(overlay, (15, 15), (panel_width + 15, panel_height + 15), (0, 0, 0), -1)
+
+        # Semi-transparent background for summary with stronger opacity
+        cv2.rectangle(overlay, (10, 10), (panel_width, panel_height), (30, 30, 30), -1)
+        cv2.addWeighted(overlay, 0.75, image, 0.25, 0, image)
+
+        # Draw border
+        cv2.rectangle(image, (10, 10), (panel_width, panel_height), (100, 100, 100), 2)
+
+        # Add summary text with shadows
+        y_offset = 40
+
+        # Total vehicles header
+        text = f"TOTAL VEHICLES: {total_vehicles}"
+        # Shadow
+        cv2.putText(image, text, (22, y_offset + 2), cv2.FONT_HERSHEY_DUPLEX,
+                   font_scale, (0, 0, 0), font_thickness + 1)
+        # Text
+        cv2.putText(image, text, (20, y_offset), cv2.FONT_HERSHEY_DUPLEX,
+                   font_scale, (255, 255, 255), font_thickness)
+
+        y_offset += line_height
+
+        # Vehicle breakdown
         for vehicle_type, count in vehicle_counts.items():
             if count > 0:
                 color = self.COLORS.get(vehicle_type, (255, 255, 255))
-                cv2.putText(image, f"{vehicle_type.title()}: {count}",
-                           (20, y_offset), cv2.FONT_HERSHEY_SIMPLEX,
-                           0.6, color, 2)
-                y_offset += 25
+                text = f"  {vehicle_type.upper()}: {count}"
+                # Shadow
+                cv2.putText(image, text, (22, y_offset + 2), cv2.FONT_HERSHEY_DUPLEX,
+                           font_scale * 0.85, (0, 0, 0), font_thickness)
+                # Text
+                cv2.putText(image, text, (20, y_offset), cv2.FONT_HERSHEY_DUPLEX,
+                           font_scale * 0.85, color, font_thickness - 1)
+                y_offset += int(line_height * 0.9)
 
-        # Traffic level
+        y_offset += 10
+
+        # Traffic level with color coding
         level_color = {
             "LIGHT": (0, 255, 0),
             "MODERATE": (0, 255, 255),
             "HEAVY": (0, 165, 255),
             "CONGESTED": (0, 0, 255)
         }
-        cv2.putText(image, f"Traffic: {traffic_level}",
-                   (20, y_offset), cv2.FONT_HERSHEY_SIMPLEX,
-                   0.7, level_color.get(traffic_level, (255, 255, 255)), 2)
+        text = f"TRAFFIC LEVEL: {traffic_level}"
+        # Shadow
+        cv2.putText(image, text, (22, y_offset + 2), cv2.FONT_HERSHEY_DUPLEX,
+                   font_scale, (0, 0, 0), font_thickness + 1)
+        # Text
+        cv2.putText(image, text, (20, y_offset), cv2.FONT_HERSHEY_DUPLEX,
+                   font_scale, level_color.get(traffic_level, (255, 255, 255)), font_thickness)
 
-        # Inference time
-        y_offset += 30
-        cv2.putText(image, f"Time: {inference_time:.3f}s",
-                   (20, y_offset), cv2.FONT_HERSHEY_SIMPLEX,
-                   0.6, (255, 255, 255), 2)
+        # Processing time
+        y_offset += line_height
+        text = f"Processing: {inference_time:.3f}s ({1.0/inference_time:.1f} FPS)"
+        # Shadow
+        cv2.putText(image, text, (22, y_offset + 2), cv2.FONT_HERSHEY_DUPLEX,
+                   font_scale * 0.75, (0, 0, 0), font_thickness)
+        # Text
+        cv2.putText(image, text, (20, y_offset), cv2.FONT_HERSHEY_DUPLEX,
+                   font_scale * 0.75, (200, 200, 200), font_thickness - 1)
 
     def _print_results(self, filename, width, height, vehicle_counts,
                        total_vehicles, inference_time, traffic_level, density):

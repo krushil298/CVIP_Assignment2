@@ -1,20 +1,20 @@
 ======================================================================
 BATCH TRAFFIC PROCESSING SUMMARY REPORT
-Generated: 2025-11-04 01:01:57
+Generated: 2025-11-04 01:10:35
 ======================================================================
 
 OVERALL STATISTICS
 ----------------------------------------------------------------------
 Total Images Processed: 2
-Total Vehicles Detected: 15
-Average Vehicles per Image: 7.50
-Average Inference Time: 0.098s
-Average FPS: 11.96
+Total Vehicles Detected: 17
+Average Vehicles per Image: 8.50
+Average Inference Time: 0.085s
+Average FPS: 13.13
 
 VEHICLE TYPE DISTRIBUTION
 ----------------------------------------------------------------------
-Car                 :    14 ( 93.3%)
-Truck               :     1 (  6.7%)
+Car                 :    14 ( 82.4%)
+Motorcycle          :     3 ( 17.6%)
 
 TRAFFIC LEVEL DISTRIBUTION
 ----------------------------------------------------------------------
@@ -29,8 +29,8 @@ PER-IMAGE DETAILS
    Vehicles: car(10)
 
 2. download (1).jpeg
-   Total Vehicles: 5
+   Total Vehicles: 7
    Traffic Level: LIGHT
-   Vehicles: car(4), truck(1)
+   Vehicles: car(4), motorcycle(3)
 
 ======================================================================
